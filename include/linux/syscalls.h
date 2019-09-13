@@ -1397,4 +1397,6 @@ static inline unsigned int ksys_personality(unsigned int personality)
 	return old;
 }
 
+int sys_s2_encrypt( char *, int);
+
 #endif
