@@ -1,4 +1,5 @@
 #include <linux/kernel.h>
+#include <errno.h>
 //#include <stdlib.h>
 //#include <iostream.h>
 //#include <stdio.h>
@@ -7,7 +8,9 @@ int sys_s2_encrypt( char *s1, int key){
 	if((key >=1) && (key <=5)){
 		while(*s1 != '\0'){
 			*s1 = *s1 + key;
-			putchar(*s1++);
+			char temp;
+			temp = *s1++;
+			printk("%c", temp);
 		}
 		printk("\n");
 		return (0);
