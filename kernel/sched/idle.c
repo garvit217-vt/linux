@@ -375,13 +375,38 @@ static void check_preempt_curr_idle(struct rq *rq, struct task_struct *p, int fl
 }
 
 static struct task_struct *
-pick_next_task_idle(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+pick_task_idle(struct rq *rq)
 {
-	put_prev_task(rq, prev);
+	return rq->idle;
+}
+
+//static void put_prev_task_idle(struct rq *rq, struct task_struct *prev)
+static void put_prev_task_idle(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+{
+}
+
+static void set_next_task_idle(struct rq *rq, struct task_struct *next)
+{
 	update_idle_core(rq);
 	schedstat_inc(rq->sched_goidle);
+	queue_core_balance(rq);
+}
 
-	return rq->idle;
+static struct task_struct *
+pick_next_task_idle(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+{
+	//struct task_struct *next = rq->idle;
+	struct task_struct *next;
+	//put_prev_task(rq, prev);
+	if (prev)
+		put_prev_task(rq, prev);
+	update_idle_core(rq);
+	schedstat_inc(rq->sched_goidle);
+	next = pick_task_idle(rq);
+	set_next_task_idle(rq, next);
+
+	//return rq->idle;
+	return next;
 }
 
 /*
@@ -391,15 +416,17 @@ pick_next_task_idle(struct rq *rq, struct task_struct *prev, struct rq_flags *rf
 static void
 dequeue_task_idle(struct rq *rq, struct task_struct *p, int flags)
 {
-	raw_spin_unlock_irq(&rq->lock);
+	//raw_spin_unlock_irq(&rq->lock);
+	raw_spin_unlock_irq(rq_lockp(rq));
 	printk(KERN_ERR "bad: scheduling from the idle thread!\n");
 	dump_stack();
-	raw_spin_lock_irq(&rq->lock);
+	//raw_spin_lock_irq(&rq->lock);
+	raw_spin_lock_irq(rq_lockp(rq));
 }
 
-static void put_prev_task_idle(struct rq *rq, struct task_struct *prev)
-{
-}
+//static void put_prev_task_idle(struct rq *rq, struct task_struct *prev)
+//{
+//}
 
 /*
  * scheduler tick hitting a task of our scheduling class.
@@ -413,9 +440,9 @@ static void task_tick_idle(struct rq *rq, struct task_struct *curr, int queued)
 {
 }
 
-static void set_curr_task_idle(struct rq *rq)
-{
-}
+//static void set_curr_task_idle(struct rq *rq)
+//{
+//}
 
 static void switched_to_idle(struct rq *rq, struct task_struct *p)
 {
@@ -451,13 +478,15 @@ const struct sched_class idle_sched_class = {
 
 	.pick_next_task		= pick_next_task_idle,
 	.put_prev_task		= put_prev_task_idle,
+	.set_next_task          = set_next_task_idle,
 
 #ifdef CONFIG_SMP
+	.pick_task		= pick_task_idle,
 	.select_task_rq		= select_task_rq_idle,
 	.set_cpus_allowed	= set_cpus_allowed_common,
 #endif
 
-	.set_curr_task          = set_curr_task_idle,
+	//.set_curr_task          = set_curr_task_idle,
 	.task_tick		= task_tick_idle,
 
 	.get_rr_interval	= get_rr_interval_idle,
